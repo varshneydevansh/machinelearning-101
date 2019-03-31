@@ -67,8 +67,23 @@ Our test score is the output. Here’s our sample data of what we’ll be traini
 
 As you may have noticed, the `?` in this case represents what we want our neural network to predict. In this case, we are predicting the test score of someone who studied for four hours and slept for eight hours based on their prior performance.
 
+---------------------------------------------------------------------------------------------------------------
 
-## Forward Propagation
+# Important to Remember
+
+
+Naturally, the right values for the weights and biases determines the strength of the predictions.     
+The process of fine-tuning the weights and biases from the input data is known as training the Neural Network.
+
+Each iteration of the training process consists of the following steps:
+
+   **Calculating the predicted output ŷ, known as feedforward.**
+   
+   **Updating the weights and biases, known as backpropagation.**
+
+-----------------------------------------------------------------------------------------------------------------
+
+# Forward Propagation (Feedforward)
 
 Let’s start coding! Open up a new python file. You’ll want to import numpy as it will help us with certain calculations.
 
@@ -218,10 +233,26 @@ print "Actual Output: \n" + str(y)
 As you may have noticed, we need to train our network to calculate more accurate results.
 
 
+# Backpropogation
 
+## The “learning” of our network
 
+Since we have a random set of weights, we need to alter them to make our inputs equal to the corresponding outputs from our data set. This is done through a method called backpropagation.
 
+Backpropagation works by using a loss function to calculate how far the network was from the target output.
+Calculating error
 
+Representing the loss function is by using the mean sum squared loss function:  **Loss = sigma(0.5 * (o - y) ^ 2)**
+
+In this function, o is our predicted output, and y is our actual output. Now that we have the loss function, our goal is to get it as close as we can to 0. That means we will need to have close to no loss at all. As we are training our network, all we are doing is minimizing the loss.
+
+To figure out which direction to alter our weights, we need to find the rate of change of our loss with respect to our weights. In other words, we need to use the derivative of the loss function to understand how the weights affect the input.
+
+In this case, we will be using a partial derivative to allow us to take into account another variable.
+
+<p align="center">
+  <img src="https://blog.kabir.sh/img/machine-learning/weightToLoss.svg">
+</p>                                             image src: [Kabir Shah] (https://blog.kabir.sh/posts/machine-learning)
 
 
 
