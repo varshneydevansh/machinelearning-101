@@ -252,18 +252,206 @@ In this case, we will be using a partial derivative to allow us to take into acc
 
 <p align="center">
   <img src="https://blog.kabir.sh/img/machine-learning/weightToLoss.svg">
-</p>                                             image src: [Kabir Shah] (https://blog.kabir.sh/posts/machine-learning)
+</p>
+
+image src: [Kabir Shah](https://blog.kabir.sh/posts/machine-learning)
 
 
+This method is known as gradient descent. By knowing which way to alter our weights, our outputs can only get more accurate.
+-------------------
+Here’s how we will calculate the incremental change to our weights:
+
+1. Find the margin of error of the `output layer (o)` by taking the difference of the predicted output and the actual output (y)
+
+2. Apply the derivative of our sigmoid activation function to the output layer error. We call this result the delta output sum.
+
+3. Use the delta output sum of the output layer error to figure out how much our z2 (hidden) layer contributed to the output error by performing a dot product with our second weight matrix. We can call this the z2 error.
+
+4. Calculate the delta output sum for the z2 layer by applying the derivative of our sigmoid activation function (just like step 2).
+
+5. Adjust the weights for the first layer by performing **a dot product of the input layer with the hidden (z2) delta output sum.** For the second layer, perform a dot product of the `hidden(z2)` layer and the `output (o)` delta output sum.
+
+Calculating the delta output sum and then applying the derivative of the sigmoid function are very important to backpropagation. The derivative of the sigmoid, also known as **sigmoid prime**, will give us the rate of change, or slope, of the activation function at output sum.
+
+Let’s continue to code our `Neural_Network` class by adding a sigmoidPrime (derivative of sigmoid) function:
+```python
+def sigmoidPrime(self, s):
+  #derivative of sigmoid
+  return s * (1 - s)
+```
+Then, we’ll want to create our backward propagation function that does everything specified in the four steps above:
+```python
+def backward(self, X, y, o):
+  # backward propagate through the network
+  self.o_error = y - o # error in output
+  self.o_delta = self.o_error*self.sigmoidPrime(o) # applying derivative of sigmoid to error
+
+  self.z2_error = self.o_delta.dot(self.W2.T) # z2 error: how much our hidden layer weights contributed to output error
+  self.z2_delta = self.z2_error*self.sigmoidPrime(self.z2) # applying derivative of sigmoid to z2 error
+
+  self.W1 += X.T.dot(self.z2_delta) # adjusting first set (input --> hidden) weights
+  self.W2 += self.z2.T.dot(self.o_delta) # adjusting second set (hidden --> output) weights
+```
+
+We can now define our output through initiating foward propagation and intiate the backward function by calling it in the `train` function:
+
+```python
+def train (self, X, y):
+  o = self.forward(X)
+  self.backward(X, y, o)
+```
+
+To run the network, all we have to do is to run the `train` function. Of course, we’ll want to do this multiple, or maybe thousands, of times. So, we’ll use a `for` loop.
+
+```python
+NN = Neural_Network()
+for i in xrange(1000): # trains the NN 1,000 times
+  print "Input: \n" + str(X)
+  print "Actual Output: \n" + str(y)
+  print "Predicted Output: \n" + str(NN.forward(X))
+  print "Loss: \n" + str(np.mean(np.square(y - NN.forward(X)))) # mean sum squared loss
+  print "\n"
+  NN.train(X, y)
+```
+
+Great, we now have a Neural Network! What about using these trained weights to predict test scores that we don’t know?
 
 
+## Predictions
+
+To predict our test score for the input of `[4, 8]`, we’ll need to create a new array to store this data, `xPredicted`.
+
+```python
+xPredicted = np.array(([4,8]), dtype=float)
+```
+We’ll also need to scale this as we did with our input and output variables:
+```python
+xPredicted = xPredicted/np.amax(xPredicted, axis=0) # maximum of xPredicted (our input data for the prediction)
+```
+Then, we’ll create a new function that prints our predicted output for `xPredicted`. Believe it or not, all we have to run is `forward(xPredicted)` to return an output!
+```python
+def predict(self):
+  print "Predicted data based on trained weights: ";
+  print "Input (scaled): \n" + str(xPredicted);
+  print "Output: \n" + str(self.forward(xPredicted));
+```
+To run this function simply call it under the for loop.
+```python
+NN.predict()
+```
+If you’d like to save your trained weights, you can do so with `np.savetxt`:
+```python
+def saveWeights(self):
+np.savetxt("w1.txt", self.W1, fmt="%s")
+np.savetxt("w2.txt", self.W2, fmt="%s")
+```
+
+```python
+
+import numpy as np
+
+# X = (hours studying, hours sleeping), y = score on test, xPredicted = 4 hours studying & 8 hours sleeping (input data for prediction)
+X = np.array(([2, 9], [1, 5], [3, 6]), dtype=float)
+y = np.array(([92], [86], [89]), dtype=float)
+xPredicted = np.array(([4,8]), dtype=float)
+
+# scale units
+X = X/np.amax(X, axis=0) # maximum of X array
+xPredicted = xPredicted/np.amax(xPredicted, axis=0) # maximum of xPredicted (our input data for the prediction)
+y = y/100 # max test score is 100
+
+class Neural_Network(object):
+  def __init__(self):
+  #parameters
+    self.inputSize = 2
+    self.outputSize = 1
+    self.hiddenSize = 3
+
+  #weights
+    self.W1 = np.random.randn(self.inputSize, self.hiddenSize) # (3x2) weight matrix from input to hidden layer
+    self.W2 = np.random.randn(self.hiddenSize, self.outputSize) # (3x1) weight matrix from hidden to output layer
+
+  def forward(self, X):
+    #forward propagation through our network
+    self.z = np.dot(X, self.W1) # dot product of X (input) and first set of 3x2 weights
+    self.z2 = self.sigmoid(self.z) # activation function
+    self.z3 = np.dot(self.z2, self.W2) # dot product of hidden layer (z2) and second set of 3x1 weights
+    o = self.sigmoid(self.z3) # final activation function
+    return o
+
+  def sigmoid(self, s):
+    # activation function
+    return 1/(1+np.exp(-s))
+
+  def sigmoidPrime(self, s):
+    #derivative of sigmoid
+    return s * (1 - s)
+
+  def backward(self, X, y, o):
+    # backward propagate through the network
+    self.o_error = y - o # error in output
+    self.o_delta = self.o_error*self.sigmoidPrime(o) # applying derivative of sigmoid to error
+
+    self.z2_error = self.o_delta.dot(self.W2.T) # z2 error: how much our hidden layer weights contributed to output error
+    self.z2_delta = self.z2_error*self.sigmoidPrime(self.z2) # applying derivative of sigmoid to z2 error
+
+    self.W1 += X.T.dot(self.z2_delta) # adjusting first set (input --> hidden) weights
+    self.W2 += self.z2.T.dot(self.o_delta) # adjusting second set (hidden --> output) weights
+
+  def train(self, X, y):
+    o = self.forward(X)
+    self.backward(X, y, o)
+
+  def saveWeights(self):
+    np.savetxt("w1.txt", self.W1, fmt="%s")
+    np.savetxt("w2.txt", self.W2, fmt="%s")
+
+  def predict(self):
+    print "Predicted data based on trained weights: ";
+    print "Input (scaled): \n" + str(xPredicted);
+    print "Output: \n" + str(self.forward(xPredicted));
+
+NN = Neural_Network()
+for i in xrange(1000): # trains the NN 1,000 times
+  print "# " + str(i) + "\n"
+  print "Input (scaled): \n" + str(X)
+  print "Actual Output: \n" + str(y)
+  print "Predicted Output: \n" + str(NN.forward(X))
+  print "Loss: \n" + str(np.mean(np.square(y - NN.forward(X)))) # mean sum squared loss
+  print "\n"
+  NN.train(X, y)
+
+NN.saveWeights()
+NN.predict()
+
+```
+
+To see how accurate the network actually is, I ran trained it 100,000 times to see if it would ever get exactly the right output. Here’s what I got:
+
+```python
+# 99999
+Input (scaled):
+[[ 0.66666667  1.        ]
+[ 0.33333333  0.55555556]
+[ 1.          0.66666667]]
+Actual Output:
+[[ 0.92]
+[ 0.86]
+[ 0.89]]
+Predicted Output:
+[[ 0.92]
+[ 0.86]
+[ 0.89]]
+Loss:
+1.94136958194e-18
 
 
-
-
-
-
-
+Predicted data based on trained weights:
+Input (scaled):
+[ 0.5  1. ]
+Output:
+[ 0.91882413]
+```
 
 
 
